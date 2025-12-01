@@ -13,7 +13,7 @@ def break_it(source, prefix, chunk_size, destination):
     if chunk_size <= 0 or chunk_size > (1024 * 1024 * 1024):
         print(f"Chunk size error. {chunk_size} needs to be between 1 (1 KB)"
               f"and {1024 * 1024 * 1024} (1 GB)")
-        sys.exit(1)
+        return 0
     try:
         with open(source, "rb") as f:
             i = 0
@@ -30,15 +30,14 @@ def break_it(source, prefix, chunk_size, destination):
                         ccc = f.read(8)
                         if not ccc:
                             print(f"done... {i+1} chunks produced for {source}")
-                            sys.exit(0)
+                            return 1
                         tf.write(ccc)
                 i += 1
     except FileNotFoundError:
         print(f"file {source} can not be opened...")
-    return 1
 
 
-def heal_it(target, prefix, chunk_size, number_of_chunks):
+def heal_it(target, prefix, chunk_size, number_of_chunks, chunk_path, destination):
     # make sure chunks are valid
     if (number_of_chunks <= 0) or (number_of_chunks > (8192 * 16)):
         print(f"Chunks error. {number_of_chunks} needs to be between 1 "
@@ -51,16 +50,18 @@ def heal_it(target, prefix, chunk_size, number_of_chunks):
         print(f"Chunk size error. {chunk_size} needs to be between 1 (1 KB)"
               f"and {1024 * 1024 * 1024} (1 GB)")
         sys.exit(1)
-
+    new_path = os.path.join(destination, target)
     try:
-        with open(target, "wb") as output_file:
+        with open(new_path, "wb") as output_file:
             for i in range(number_of_chunks):
                 chunk_file_name = f"{prefix}.{str(i).zfill(32)}"
-                with open(chunk_file_name, "rb") as chunk_file:
+                full_chunk_path = os.path.join(chunk_path, chunk_file_name)
+                with open(full_chunk_path, "rb") as chunk_file:
                     chunk_data = chunk_file.read()
                     output_file.write(chunk_data)
                     print(f"Chunk {i + 1} merged successfully")
             print("All chunks merged successfully")
     except FileNotFoundError:
-        print(f"file {target} can not be opened...")
+        print(f"file {new_path} can not be opened...")
         sys.exit(1)
+    return 1
